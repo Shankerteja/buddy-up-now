@@ -4,19 +4,16 @@ import { SignUpForm } from '@/components/AuthForms';
 import NavBar from '@/components/NavBar';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import { Shield } from 'lucide-react';
 
 const SignUp: React.FC = () => {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="loading-ring">
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-        </div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <LoadingSpinner size="large" />
       </div>
     );
   }
@@ -26,10 +23,19 @@ const SignUp: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
       <NavBar />
-      <main className="container mx-auto px-4 py-12">
-        <SignUpForm />
+      <main className="container mx-auto px-4 py-12 flex flex-col items-center">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-md p-6 space-y-6">
+          <div className="flex flex-col items-center">
+            <div className="bg-purple-100 p-3 rounded-full">
+              <Shield className="h-8 w-8 text-purple-600" />
+            </div>
+            <h1 className="mt-4 text-2xl font-bold text-center text-gray-800">Join SheShield Today</h1>
+            <p className="mt-1 text-center text-gray-600">Create your account to stay protected</p>
+          </div>
+          <SignUpForm />
+        </div>
       </main>
     </div>
   );

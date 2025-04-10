@@ -5,21 +5,18 @@ import EmergencyButton from '@/components/EmergencyButton';
 import FakeCall from '@/components/FakeCall';
 import LocationSharing from '@/components/LocationSharing';
 import SafetyResources from '@/components/SafetyResources';
+import VoiceCommand from '@/components/VoiceCommand';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
-const Dashboard: React.FC = () => {
+const UpdatedDashboard: React.FC = () => {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="loading-ring">
-          <div></div>
-          <div></div>
-          <div></div>
-          <div></div>
-        </div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <LoadingSpinner size="large" />
       </div>
     );
   }
@@ -27,6 +24,11 @@ const Dashboard: React.FC = () => {
   if (!user) {
     return <Navigate to="/login" />;
   }
+
+  const handleEmergencyVoiceCommand = () => {
+    // Trigger the same action as the SOS button
+    document.getElementById('sos-button')?.click();
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -40,11 +42,12 @@ const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-6">
             <LocationSharing />
-            <SafetyResources />
+            <VoiceCommand onEmergency={handleEmergencyVoiceCommand} />
           </div>
           
           <div className="space-y-6">
             <FakeCall />
+            <SafetyResources />
           </div>
         </div>
       </main>
@@ -54,4 +57,4 @@ const Dashboard: React.FC = () => {
   );
 };
 
-export default Dashboard;
+export default UpdatedDashboard;
