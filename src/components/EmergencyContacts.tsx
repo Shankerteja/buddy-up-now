@@ -168,6 +168,7 @@ const EmergencyContacts: React.FC = () => {
         <Button 
           onClick={addContact}
           className="w-full bg-purple-600 hover:bg-purple-700"
+          type="button"
         >
           <Plus className="mr-2 h-4 w-4" />
           Add Contact
