@@ -6,6 +6,7 @@ import FakeCall from '@/components/FakeCall';
 import LocationSharing from '@/components/LocationSharing';
 import SafetyResources from '@/components/SafetyResources';
 import VoiceCommand from '@/components/VoiceCommand';
+import EmergencyContacts from '@/components/EmergencyContacts';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -43,6 +44,7 @@ const UpdatedDashboard: React.FC = () => {
           <div className="space-y-6">
             <LocationSharing />
             <VoiceCommand onEmergency={handleEmergencyVoiceCommand} />
+            <EmergencyContacts />
           </div>
           
           <div className="space-y-6">

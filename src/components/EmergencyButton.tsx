@@ -1,9 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, Mic, Camera, MapPin, X, AlertCircle } from 'lucide-react';
+import { AlertTriangle, Mic, Camera, MapPin, X, AlertCircle, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
+import { sendEmergencyMessages } from '@/services/emergencyService';
+import LoadingSpinner from './LoadingSpinner';
 
 interface Location {
   latitude: number | null;
@@ -20,6 +22,8 @@ const EmergencyButton: React.FC = () => {
   });
   const [recording, setRecording] = useState(false);
   const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
+  const [sendingMessages, setSendingMessages] = useState(false);
+  const [messagesSent, setMessagesSent] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -139,20 +143,41 @@ const EmergencyButton: React.FC = () => {
     startRecording();
     playAlarm();
     
-    // Mock API call to send alert
+    // Send emergency messages to contacts
+    setSendingMessages(true);
     try {
-      // In a real app, you would send the alert to your API
-      // await fetch('/api/send-alert', {...})
+      const result = await sendEmergencyMessages(location);
+      setMessagesSent(true);
       
-      // For demo, simulate API call
+      if (result) {
+        toast({
+          title: 'Emergency Contacts Notified',
+          description: 'Your emergency contacts have been sent your location and alert.',
+        });
+      } else {
+        toast({
+          title: 'No Contacts Found',
+          description: 'No emergency contacts to notify. Please add contacts in settings.',
+          variant: 'destructive',
+        });
+      }
+      
+      // Mock API call to send alert to backend
       setTimeout(() => {
         toast({
           title: 'Alert Sent',
-          description: 'Emergency contacts have been notified.',
+          description: 'Emergency services have been notified.',
         });
       }, 2000);
     } catch (error) {
-      console.error('Error sending alert:', error);
+      console.error('Error sending emergency messages:', error);
+      toast({
+        title: 'Message Sending Failed',
+        description: 'Unable to send emergency messages to your contacts.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSendingMessages(false);
     }
   };
 
@@ -160,6 +185,7 @@ const EmergencyButton: React.FC = () => {
     setEmergencyActive(false);
     stopRecording();
     stopAlarm();
+    setMessagesSent(false);
     
     toast({
       title: 'Emergency Cancelled',
@@ -168,14 +194,18 @@ const EmergencyButton: React.FC = () => {
   };
 
   const playAlarm = () => {
-    const audio = new Audio('/alarm.mp3');
-    audio.loop = true;
-    audio.volume = 0.7;
-    audio.id = 'emergency-alarm';
-    document.body.appendChild(audio);
-    audio.play().catch(error => {
-      console.error('Error playing alarm:', error);
-    });
+    try {
+      const audio = new Audio('/alarm.mp3');
+      audio.loop = true;
+      audio.volume = 0.7;
+      audio.id = 'emergency-alarm';
+      document.body.appendChild(audio);
+      audio.play().catch(error => {
+        console.error('Error playing alarm:', error);
+      });
+    } catch (error) {
+      console.error('Error setting up alarm:', error);
+    }
   };
 
   const stopAlarm = () => {
@@ -194,6 +224,7 @@ const EmergencyButton: React.FC = () => {
           size="lg"
           className="sos-button h-24 w-24 rounded-full text-2xl font-bold"
           onClick={triggerEmergency}
+          id="sos-button"
         >
           SOS
         </Button>
@@ -232,6 +263,18 @@ const EmergencyButton: React.FC = () => {
                 <p className="text-sm font-medium">
                   {recording ? 'Audio recording active' : 'Audio recording inactive'}
                 </p>
+              </div>
+              
+              <div className="flex items-center">
+                <MessageSquare className={`mr-2 ${messagesSent ? 'text-green-500' : sendingMessages ? 'text-orange-500' : 'text-gray-500'}`} />
+                <p className="text-sm font-medium">
+                  {messagesSent 
+                    ? 'Emergency messages sent to contacts' 
+                    : sendingMessages 
+                      ? 'Sending emergency messages...' 
+                      : 'Emergency contacts will be notified'}
+                </p>
+                {sendingMessages && <LoadingSpinner size="small" color="purple" />}
               </div>
             </div>
             

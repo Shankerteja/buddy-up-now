@@ -5,6 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 
+// Define the SpeechRecognition type
+interface Window {
+  SpeechRecognition: any;
+  webkitSpeechRecognition: any;
+}
+
 interface VoiceCommandProps {
   onEmergency: () => void;
 }
@@ -17,7 +23,8 @@ const VoiceCommand: React.FC<VoiceCommandProps> = ({ onEmergency }) => {
   useEffect(() => {
     // Initialize speech recognition
     if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      // Use TypeScript type assertion to access the browser-specific APIs
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       const recognitionInstance = new SpeechRecognition();
       
       recognitionInstance.continuous = true;
@@ -69,7 +76,7 @@ const VoiceCommand: React.FC<VoiceCommandProps> = ({ onEmergency }) => {
         recognition.stop();
       }
     };
-  }, []);
+  }, [listening, onEmergency, recognition, toast]);
 
   const toggleListening = () => {
     if (!recognition) {
