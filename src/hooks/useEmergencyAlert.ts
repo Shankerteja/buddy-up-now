@@ -1,12 +1,21 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { sendEmergencyMessages } from '@/services/emergencyService';
+import { api } from '@/lib/api';
 
 interface Location {
   latitude: number | null;
   longitude: number | null;
   accuracy: number | null;
+}
+
+interface EmergencyResponse {
+  success: boolean;
+  message: string;
+  details?: {
+    totalContacts: number;
+    successful: number;
+    failed: number;
+  };
 }
 
 export const useEmergencyAlert = () => {
@@ -17,29 +26,22 @@ export const useEmergencyAlert = () => {
   const sendAlerts = async (location: Location) => {
     setSendingMessages(true);
     try {
-      const result = await sendEmergencyMessages(location);
-      setMessagesSent(true);
-      
-      if (result) {
+      const locationString = location.latitude && location.longitude
+        ? `${location.latitude},${location.longitude}`
+        : 'Location unavailable';
+
+      const response = await api.post<EmergencyResponse>('/emergency/alert', {
+        location: locationString,
+        message: 'I need immediate help!'
+      });
+
+      if (response.data.success) {
+        setMessagesSent(true);
         toast({
           title: 'Emergency Contacts Notified',
-          description: 'Your emergency contacts have been sent your location and alert.',
-        });
-      } else {
-        toast({
-          title: 'No Contacts Found',
-          description: 'No emergency contacts to notify. Please add contacts in settings.',
-          variant: 'destructive',
+          description: `Alert sent to ${response.data.details?.totalContacts} contacts. ${response.data.details?.successful} successful, ${response.data.details?.failed} failed.`,
         });
       }
-      
-      // Mock API call to send alert to backend
-      setTimeout(() => {
-        toast({
-          title: 'Alert Sent',
-          description: 'Emergency services have been notified.',
-        });
-      }, 2000);
     } catch (error) {
       console.error('Error sending emergency messages:', error);
       toast({

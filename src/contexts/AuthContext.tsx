@@ -1,19 +1,28 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/components/ui/use-toast";
+import api from '@/utils/api';
 
 type User = {
   id: string;
   email: string;
   name: string;
+  phone?: string;
 } | null;
+
+type AuthResponse = {
+  _id: string;
+  email: string;
+  name: string;
+  phone?: string;
+  token: string;
+};
 
 type AuthContextType = {
   user: User;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
+  signup: (email: string, password: string, name: string, phone?: string) => Promise<void>;
   logout: () => void;
   resetPassword: (email: string) => Promise<void>;
 };
@@ -38,21 +47,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      // Mock API call - in a real app, this would call your backend
-      // const response = await fetch('/api/login', {...})
+      const response = await api.post<AuthResponse>('/auth/login', { email, password });
       
-      // For demo purposes, simulate successful login after delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock user data
       const userData = {
-        id: '123',
-        email,
-        name: email.split('@')[0],
+        id: response.data._id,
+        email: response.data.email,
+        name: response.data.name,
+        phone: response.data.phone,
       };
       
       localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('token', 'mock-jwt-token');
+      localStorage.setItem('token', response.data.token);
       setUser(userData);
       
       toast({
@@ -61,10 +66,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Login failed",
-        description: "Please check your credentials and try again.",
+        description: error.response?.data?.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
       console.error('Login error:', error);
@@ -73,21 +78,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signup = async (email: string, password: string, name: string) => {
+  const signup = async (email: string, password: string, name: string, phone?: string) => {
     try {
       setIsLoading(true);
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock user data
-      const userData = {
-        id: '123',
-        email,
+      const response = await api.post<AuthResponse>('/auth/register', {
         name,
+        email,
+        password,
+        phone: phone || '',
+      });
+      
+      const userData = {
+        id: response.data._id,
+        email: response.data.email,
+        name: response.data.name,
+        phone: response.data.phone,
       };
       
       localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('token', 'mock-jwt-token');
+      localStorage.setItem('token', response.data.token);
       setUser(userData);
       
       toast({
@@ -96,10 +106,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Sign up failed",
-        description: "There was an error creating your account.",
+        description: error.response?.data?.message || "There was an error creating your account.",
         variant: "destructive",
       });
       console.error('Signup error:', error);

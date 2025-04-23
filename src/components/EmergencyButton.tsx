@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -19,12 +18,26 @@ const EmergencyButton: React.FC = () => {
 
   const triggerEmergency = async () => {
     setEmergencyActive(true);
-    getLocation();
-    startRecording();
     playAlarm();
+    startRecording();
     
-    // Send emergency messages to contacts
-    await sendAlerts(location);
+    try {
+      // Get location and wait for it to be available
+      const locationData = await getLocation();
+      
+      // Send emergency messages to contacts with location
+      await sendAlerts(locationData);
+    } catch (error) {
+      console.error('Error getting location:', error);
+      
+      // If location is not available, send alert without location
+      await sendAlerts(location);
+      toast({
+        title: 'Location Not Available',
+        description: 'Emergency alert sent without location data.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const cancelEmergency = () => {

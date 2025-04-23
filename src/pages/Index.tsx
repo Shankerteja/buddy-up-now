@@ -17,7 +17,7 @@ const Index: React.FC = () => {
         {/* Hero Section with Background */}
         <section className="relative rounded-xl overflow-hidden mb-16">
           <div className="absolute inset-0 bg-purple-900/75 z-10"></div>
-          <div className="bg-[url('https://images.unsplash.com/photo-1592840062661-a5a7f78e2056?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80')] bg-cover bg-center h-[500px]"></div>
+          <div className="bg-[url('https://img.freepik.com/free-photo/positive-young-women-posing-together_23-2148431608.jpg?t=st=1744292764~exp=1744296364~hmac=684eeee0f8aa7070d610284d4684d83544033d1ec5de0296984687e3d1bf0d06&w=1380')] bg-cover bg-center h-[500px]"></div>
           <div className="absolute inset-0 z-20 flex items-center">
             <div className="container mx-auto px-6">
               <div className="max-w-xl text-white">
@@ -44,7 +44,7 @@ const Index: React.FC = () => {
                         </Button>
                       </Link>
                       <Link to="/login">
-                        <Button variant="outline" size="lg" className="w-full sm:w-auto border-purple-200 text-white hover:bg-purple-600/20">
+                        <Button variant="outline" size="lg" className="w-full sm:w-auto border-purple-200 text-black hover:bg-purple-600/20 hover:text-white">
                           Log In
                         </Button>
                       </Link>

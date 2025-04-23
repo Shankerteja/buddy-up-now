@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { User, Phone, Trash, Plus, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,32 +5,65 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { Label } from '@/components/ui/label';
+import { api } from '@/lib/api';
 
 interface Contact {
-  id: string;
+  _id: string;
   name: string;
   phone: string;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message: string;
+}
+
+interface DeleteResponse {
+  message: string;
+  success?: boolean;
 }
 
 const EmergencyContacts: React.FC = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [newContact, setNewContact] = useState({ name: '', phone: '' });
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  // Load contacts from localStorage on component mount
+  // Load contacts from API
   useEffect(() => {
-    const savedContacts = localStorage.getItem('emergencyContacts');
-    if (savedContacts) {
-      setContacts(JSON.parse(savedContacts));
-    }
-  }, []);
+    const fetchContacts = async () => {
+      try {
+        const response = await api.get<Contact[]>('/emergency/contacts');
+        // The response.data is an array of contacts directly
+        if (Array.isArray(response.data)) {
+          setContacts(response.data);
+        } else {
+          console.error('Invalid response format:', response.data);
+          toast({
+            title: 'Error',
+            description: 'Invalid response format from server',
+            variant: 'destructive',
+          });
+          setContacts([]);
+        }
+      } catch (error) {
+        console.error('Error fetching contacts:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load emergency contacts',
+          variant: 'destructive',
+        });
+        setContacts([]); // Set empty array on error
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Save contacts to localStorage when updated
-  useEffect(() => {
-    localStorage.setItem('emergencyContacts', JSON.stringify(contacts));
-  }, [contacts]);
+    fetchContacts();
+  }, [toast]);
 
-  const addContact = () => {
+  const addContact = async () => {
     if (!newContact.name || !newContact.phone) {
       toast({
         title: 'Missing Information',
@@ -52,37 +84,111 @@ const EmergencyContacts: React.FC = () => {
       return;
     }
 
-    const newContactWithId = {
-      ...newContact,
-      id: crypto.randomUUID(),
-    };
-
-    setContacts([...contacts, newContactWithId]);
-    setNewContact({ name: '', phone: '' });
-    
-    toast({
-      title: 'Contact Added',
-      description: `${newContact.name} has been added to your emergency contacts`,
-    });
+    try {
+      //console.log('Sending contact data:', newContact);
+      const response = await api.post<Contact>('/emergency/contacts', newContact);
+      //console.log('API response:', response.data);
+      
+      // The response.data is the contact object directly
+      if (response.data && response.data._id) {
+        setContacts(prevContacts => [...prevContacts, response.data]);
+        setNewContact({ name: '', phone: '' });
+        
+        toast({
+          title: 'Contact Added',
+          description: `${newContact.name} has been added to your emergency contacts`,
+        });
+      } else {
+        console.error('Invalid response format:', response.data);
+        throw new Error('Invalid response format from server');
+      }
+    } catch (error: any) {
+      console.error('Error adding contact:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText
+      });
+      
+      toast({
+        title: 'Error',
+        description: error.response?.data?.message || error.message || 'Failed to add emergency contact',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const removeContact = (id: string) => {
-    const contactToRemove = contacts.find(contact => contact.id === id);
-    setContacts(contacts.filter(contact => contact.id !== id));
-    
-    toast({
-      title: 'Contact Removed',
-      description: `${contactToRemove?.name} has been removed from your emergency contacts`,
-    });
+  const removeContact = async (id: string) => {
+    try {
+      const response = await api.delete<DeleteResponse>(`/emergency/contacts/${id}`);
+      
+      // Check if the response contains a success message
+      if (response.data && response.data.message === 'Contact removed') {
+        // This is actually a success case
+        const contactToRemove = contacts.find(contact => contact._id === id);
+        setContacts(prevContacts => prevContacts.filter(contact => contact._id !== id));
+        
+        toast({
+          title: 'Contact Removed',
+          description: `${contactToRemove?.name || 'Contact'} has been removed from your emergency contacts`,
+        });
+      } else if (response.data && response.data.success) {
+        // Handle the case where the response has a success flag
+        const contactToRemove = contacts.find(contact => contact._id === id);
+        setContacts(prevContacts => prevContacts.filter(contact => contact._id !== id));
+        
+        toast({
+          title: 'Contact Removed',
+          description: `${contactToRemove?.name || 'Contact'} has been removed from your emergency contacts`,
+        });
+      } else {
+        // This is a genuine error case
+        throw new Error(response.data?.message || 'Failed to remove contact');
+      }
+    } catch (error) {
+      console.error('Error removing contact:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to remove emergency contact',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const testMessageContact = (contact: Contact) => {
-    // In a real app, this would integrate with an SMS API
-    toast({
-      title: 'Test Message Sent',
-      description: `A test message was sent to ${contact.name} at ${contact.phone}`,
-    });
+  const testMessageContact = async (contact: Contact) => {
+    try {
+      const response = await api.post<ApiResponse<void>>(`/emergency/alert/${contact._id}`, {
+        message: 'This is a test message from SheShield'
+      });
+      
+      if (response.data.success) {
+        toast({
+          title: 'Test Message Sent',
+          description: `A test message was sent to ${contact.name} at ${contact.phone}`,
+        });
+      } else {
+        throw new Error(response.data.message || 'Failed to send test message');
+      }
+    } catch (error) {
+      console.error('Error sending test message:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to send test message',
+        variant: 'destructive',
+      });
+    }
   };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -97,10 +203,10 @@ const EmergencyContacts: React.FC = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-3">
-          {contacts.length > 0 ? (
+          {contacts && contacts.length > 0 ? (
             contacts.map(contact => (
               <div 
-                key={contact.id} 
+                key={contact._id} 
                 className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
               >
                 <div className="flex items-center gap-3">
@@ -124,7 +230,7 @@ const EmergencyContacts: React.FC = () => {
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    onClick={() => removeContact(contact.id)}
+                    onClick={() => removeContact(contact._id)}
                     title="Remove Contact"
                   >
                     <Trash className="h-4 w-4 text-red-500" />

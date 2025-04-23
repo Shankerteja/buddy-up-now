@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,6 +14,7 @@ export const LoginForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     await login(email, password);
   };
 
@@ -23,7 +23,7 @@ export const LoginForm: React.FC = () => {
       <CardHeader className="text-center">
         <CardTitle className="text-2xl flex justify-center items-center">
           <Shield className="mr-2 text-primary" />
-          Login to BuddyUp
+          Login to Sheshield
         </CardTitle>
         <CardDescription>Enter your credentials to access your account</CardDescription>
       </CardHeader>
@@ -85,11 +85,13 @@ export const SignUpForm: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [phone, setPhone] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const { signup, isLoading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log(name, email, password, confirmPassword, phone)
     
     if (password !== confirmPassword) {
       setPasswordError("Passwords don't match");
@@ -97,7 +99,7 @@ export const SignUpForm: React.FC = () => {
     }
     
     setPasswordError('');
-    await signup(email, password, name);
+    await signup(email, password, name, phone);
   };
 
   return (
@@ -105,7 +107,7 @@ export const SignUpForm: React.FC = () => {
       <CardHeader className="text-center">
         <CardTitle className="text-2xl flex justify-center items-center">
           <Shield className="mr-2 text-primary" />
-          Create a BuddyUp Account
+          Create a Sheshield Account
         </CardTitle>
         <CardDescription>Enter your details to create an account</CardDescription>
       </CardHeader>
@@ -129,6 +131,17 @@ export const SignUpForm: React.FC = () => {
               placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone Number</Label>
+            <Input
+              id="phone"
+              type="tel"
+              placeholder="+1234567890"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
               required
             />
           </div>

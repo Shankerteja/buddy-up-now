@@ -76,7 +76,7 @@ const VoiceCommand: React.FC<VoiceCommandProps> = ({ onEmergency }) => {
         recognition.stop();
       }
     };
-  }, [listening, onEmergency, recognition, toast]);
+  }, [/*listening, onEmergency, recognition, toast*/]);
 
   const toggleListening = () => {
     if (!recognition) {

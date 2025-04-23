@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -16,32 +15,40 @@ export const useLocation = () => {
   });
   const { toast } = useToast();
 
-  const getLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy,
-          });
-        },
-        (error) => {
-          console.error('Error getting location:', error);
-          toast({
-            title: 'Location Error',
-            description: 'Unable to get your current location.',
-            variant: 'destructive',
-          });
-        }
-      );
-    } else {
-      toast({
-        title: 'Location Not Supported',
-        description: 'Geolocation is not supported by your browser.',
-        variant: 'destructive',
-      });
-    }
+  const getLocation = (): Promise<Location> => {
+    return new Promise((resolve, reject) => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const newLocation = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              accuracy: position.coords.accuracy,
+            };
+            setLocation(newLocation);
+            resolve(newLocation);
+          },
+          (error) => {
+            console.error('Error getting location:', error);
+            toast({
+              title: 'Location Error',
+              description: 'Unable to get your current location.',
+              variant: 'destructive',
+            });
+            reject(error);
+          },
+          { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        );
+      } else {
+        const error = new Error('Geolocation is not supported by your browser.');
+        toast({
+          title: 'Location Not Supported',
+          description: 'Geolocation is not supported by your browser.',
+          variant: 'destructive',
+        });
+        reject(error);
+      }
+    });
   };
 
   return { location, getLocation };

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,14 +37,60 @@ const FakeCall: React.FC = () => {
   const startCall = () => {
     setRinging(true);
     
-    // Play ringtone
-    const audio = new Audio('/ringtone.mp3');
-    audio.loop = true;
-    audio.id = 'fake-call-ringtone';
-    document.body.appendChild(audio);
-    audio.play().catch(error => {
+    // Create ringtone using Web Audio API
+    try {
+      // Create audio context
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      // Create oscillator for ringtone
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      // Configure oscillator for ringtone sound
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      
+      // Create a simple ringtone pattern
+      const ringPattern = () => {
+        // Ring on
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        
+        // Ring off after 1 second
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime + 1);
+        
+        // Ring on again after 2 seconds
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + 2);
+        
+        // Ring off after 3 seconds
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime + 3);
+        
+        // Repeat the pattern
+        setTimeout(() => {
+          if (ringing) {
+            ringPattern();
+          }
+        }, 4000);
+      };
+      
+      // Connect nodes
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      // Start oscillator
+      oscillator.start();
+      
+      // Start ring pattern
+      ringPattern();
+      
+      // Store references for cleanup
+      (window as any).fakeCallAudio = {
+        audioContext,
+        oscillator,
+        gainNode
+      };
+    } catch (error) {
       console.error('Error playing ringtone:', error);
-    });
+    }
     
     setTimeout(() => {
       setRinging(false);
@@ -55,10 +100,11 @@ const FakeCall: React.FC = () => {
 
   const endCall = () => {
     // Stop ringtone
-    const audio = document.getElementById('fake-call-ringtone') as HTMLAudioElement;
+    const audio = (window as any).fakeCallAudio;
     if (audio) {
-      audio.pause();
-      audio.remove();
+      audio.oscillator.stop();
+      audio.audioContext.close();
+      (window as any).fakeCallAudio = null;
     }
     
     setRinging(false);
