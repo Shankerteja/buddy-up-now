@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_API_URL || 'https://buddy-up-now.vercel.app/api';
+const baseURL = import.meta.env.VITE_API_URL || 'https://sheshield-backend.onrender.com/api';
 
 const api = axios.create({
   baseURL,
